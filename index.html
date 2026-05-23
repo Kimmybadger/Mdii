@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marpple Shop Image Optimizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161e;
+    --surface2: #1e1e2a;
+    --border: #2a2a3a;
+    --accent: #ff4f6d;
+    --accent2: #7c6cfc;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --success: #3dd68c;
+    --warning: #ffa94d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #9a9ab0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* 모드 선택 */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    padding: 6px;
+    border-radius: 14px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 500;
+  }
+
+  .mode-tab:not(.active):hover { color: var(--text); }
+
+  /* 규격 정보 카드 */
+  .spec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .spec-card.active { display: block; }
+
+  .spec-title {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+
+  .spec-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+
+  .spec-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .spec-value { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  /* 드롭존 */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    margin-bottom: 20px;
+    background: var(--surface);
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(255,79,109,0.05);
+  }
+
+  .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .drop-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .drop-text { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .drop-sub { font-size: 12px; color: var(--muted); }
+
+  /* 옵션 */
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .option-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .option-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  select, input[type=range] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent2); }
+
+  input[type=range] {
+    padding: 4px 0;
+    accent-color: var(--accent);
+    border: none;
+    background: transparent;
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .quality-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  /* 변환 버튼 */
+  .convert-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+
+  .convert-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .convert-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* 파일 목록 */
+  .file-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .file-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .file-item.done { border-color: var(--success); }
+  .file-item.error { border-color: var(--accent); }
+  .file-item.warning { border-color: var(--warning); }
+
+  .file-thumb {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
+
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .file-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .file-status {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .status-done { background: rgba(61,214,140,0.15); color: var(--success); }
+  .status-error { background: rgba(255,79,109,0.15); color: var(--accent); }
+  .status-warning { background: rgba(255,169,77,0.15); color: var(--warning); }
+  .status-pending { background: var(--surface2); color: var(--muted); }
+  .status-processing {
+    background: rgba(124,108,252,0.15); color: var(--accent2);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .size-change {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .size-reduced { color: var(--success); }
+  .size-large { color: var(--warning); }
+
+  /* 다운로드 */
+  .download-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: none;
+  }
+
+  .download-section.visible { display: block; }
+
+  .dl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .dl-title { font-size: 14px; font-weight: 500; }
+  .dl-stats { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  .dl-buttons { display: flex; gap: 10px; }
+
+  .dl-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dl-btn-all {
+    background: var(--accent);
+    color: white;
+  }
+
+  .dl-btn-clear {
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .dl-btn:hover { opacity: 0.85; }
+
+  /* 경고 메세지 */
+  .spec-warn {
+    background: rgba(255,169,77,0.1);
+    border: 1px solid rgba(255,169,77,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--warning);
+    margin-top: 8px;
+    display: none;
+  }
+
+  .spec-warn.show { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">MARPPLE SHOP</div>
+    <h1>Image Optimizer</h1>
+    <p class="subtitle">Automatically optimize images to match Marpple Shop upload specs</p>
+  </div>
+
+  <!-- 모드 선택 -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="creator">Creator Design</button>
+    <button class="mode-tab" data-mode="product">Made-to-Order</button>
+    <button class="mode-tab" data-mode="thumbnail">Thumbnail</button>
+  </div>
+
+  <!-- 규격 안내 -->
+  <div class="spec-card active" id="spec-creator">
+    <div class="spec-title">// Creator Design 규격</div>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="spec-label">Format</div><div class="spec-value">PNG (Transparent BG recommended)</div></div>
+      <div class="spec-item"><div class="spec-label">Image Size</div><div class="spec-value">3,000 ~ 8,000px</div></div>
+      <div class="spec-item"><div class="spec-label">Max Size</div><div class="spec-value">4MB or less</div></div>
+      <div class="spec-item"><div class="spec-label">Color Mode</div><div class="spec-value">RGB</div></div>
+    </div>
+  </div>
+
+  <div class="spec-card" id="spec-product">
+    <div class="spec-title">// 마플샵Made-to-Order 규격</div>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="spec-label">Format</div><div class="spec-value">PNG / JPG</div></div>
+      <div class="spec-item"><div class="spec-label">Image Size</div><div class="spec-value">2,500 ~ 4,000px</div></div>
+      <div class="spec-item"><div class="spec-label">Max Size</div><div class="spec-value">Under 25MB</div></div>
+      <div class="spec-item"><div class="spec-label">Resolution</div><div class="spec-value">150dpi or higher</div></div>
+    </div>
+  </div>
+
+  <div class="spec-card" id="spec-thumbnail">
+    <div class="spec-title">// 크리에이터배송 Thumbnail 규격</div>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="spec-label">Format</div><div class="spec-value">JPG / PNG</div></div>
+      <div class="spec-item"><div class="spec-label">Aspect Ratio</div><div class="spec-value">1:1 (Square)</div></div>
+      <div class="spec-item"><div class="spec-label">최소 Resolution</div><div class="spec-value">740px or more</div></div>
+      <div class="spec-item"><div class="spec-label">Max Size</div><div class="spec-value">5MB or less</div></div>
+    </div>
+  </div>
+
+  <!-- 드롭존 -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" multiple accept="image/*">
+    <span class="drop-icon">🖼️</span>
+    <div class="drop-text">Click or drag & drop images here</div>
+    <div class="drop-sub">Supports JPG, PNG, WEBP, GIF and more</div>
+  </div>
+
+  <!-- 옵션 -->
+  <div class="options-row">
+    <div class="option-block">
+      <div class="option-label">Output Format</div>
+      <select id="outputFormat">
+        <option value="auto">Auto (match mode)</option>
+        <option value="png">PNG (transparent)</option>
+        <option value="jpeg">JPG (With background)</option>
+        <option value="webp">WebP</option>
+      </select>
+    </div>
+    <div class="option-block">
+      <div class="option-label">Quality / Compression</div>
+      <div class="quality-val" id="qualityVal">85%</div>
+      <input type="range" id="quality" min="50" max="100" value="85">
+      <div class="range-labels"><span>High Compression</span><span>High Quality</span></div>
+    </div>
+  </div>
+
+  <div class="spec-warn" id="specWarn">
+    ⚠️ Some images may not meet the required specs. Please review the results after conversion.
+  </div>
+
+  <!-- 파일 목록 -->
+  <div class="file-list" id="fileList"></div>
+
+  <!-- 변환 버튼 -->
+  <button class="convert-btn" id="convertBtn" disabled>✨ Convert for Marpple Shop</button>
+
+  <!-- 다운로드 섹션 -->
+  <div class="download-section" id="downloadSection">
+    <div class="dl-header">
+      <div class="dl-title">Conversion Complete</div>
+      <div class="dl-stats" id="dlStats"></div>
+    </div>
+    <div class="dl-buttons">
+      <button class="dl-btn dl-btn-all" id="downloadAll">📦 Download All (ZIP)</button>
+      <button class="dl-btn dl-btn-clear" id="clearAll">Clear All</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const MODES = {
+  creator:   { format: 'png',  maxMB: 4,   minPx: 3000, maxPx: 8000,  label: 'Creator Design' },
+  product:   { format: 'jpeg', maxMB: 25,  minPx: 2500, maxPx: 4000,  label: 'Made-to-Order' },
+  thumbnail: { format: 'jpeg', maxMB: 5,   minPx: 740,  maxPx: 99999, label: 'Thumbnail', square: true }
+};
+
+let currentMode = 'creator';
+let files = [];
+let results = [];
+
+// 탭 전환
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.spec-card').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    document.getElementById(`spec-${currentMode}`).classList.add('active');
+    renderFileList();
+  });
+});
+
+// 품질 슬라이더
+const qualitySlider = document.getElementById('quality');
+const qualityVal = document.getElementById('qualityVal');
+qualitySlider.addEventListener('input', () => {
+  qualityVal.textContent = qualitySlider.value + '%';
+});
+
+// 드롭존
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  addFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+});
+fileInput.addEventListener('change', e => {
+  addFiles(Array.from(e.target.files));
+  fileInput.value = '';
+});
+
+function addFiles(newFiles) {
+  files = [...files, ...newFiles];
+  results = files.map(() => null);
+  renderFileList();
+  document.getElementById('convertBtn').disabled = files.length === 0;
+  document.getElementById('downloadSection').classList.remove('visible');
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+async function getImageDimensions(file) {
+  return new Promise(res => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { res({ w: img.naturalWidth, h: img.naturalHeight }); URL.revokeObjectURL(url); };
+    img.src = url;
+  });
+}
+
+async function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const dim = await getImageDimensions(f);
+    const mode = MODES[currentMode];
+    const maxSide = Math.max(dim.w, dim.h);
+    const isSmall = maxSide < mode.minPx;
+    const item = document.createElement('div');
+    item.className = 'file-item' + (isSmall ? ' warning' : '');
+    item.id = `file-item-${i}`;
+
+    const thumb = document.createElement('img');
+    thumb.className = 'file-thumb';
+    thumb.src = URL.createObjectURL(f);
+
+    const info = document.createElement('div');
+    info.className = 'file-info';
+    info.innerHTML = `
+      <div class="file-name">${f.name}</div>
+      <div class="file-meta">${dim.w} × ${dim.h}px · ${formatSize(f.size)}</div>
+      ${isSmall ? `<div class="size-change size-large">⚠️ Original is smaller than min ${mode.minPx}px</div>` : ''}
+    `;
+
+    const status = document.createElement('div');
+    status.className = 'file-status status-pending';
+    status.id = `status-${i}`;
+    status.textContent = '대기';
+
+    item.appendChild(thumb);
+    item.appendChild(info);
+    item.appendChild(status);
+    list.appendChild(item);
+  }
+  document.getElementById('specWarn').classList.toggle('show', files.some(f => false));
+}
+
+// 변환
+document.getElementById('convertBtn').addEventListener('click', async () => {
+  if (!files.length) return;
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  btn.textContent = 'Converting...';
+  results = [];
+
+  const mode = MODES[currentMode];
+  const quality = parseInt(qualitySlider.value) / 100;
+  const formatSel = document.getElementById('outputFormat').value;
+  const fmt = formatSel === 'auto' ? mode.format : formatSel;
+
+  for (let i = 0; i < files.length; i++) {
+    const statusEl = document.getElementById(`status-${i}`);
+    statusEl.className = 'file-status status-processing';
+    statusEl.textContent = 'Processing…';
+
+    try {
+      const blob = await convertImage(files[i], fmt, quality, mode);
+      results.push({ blob, name: getOutputName(files[i].name, fmt), originalSize: files[i].size });
+
+      statusEl.className = 'file-status status-done';
+      statusEl.textContent = 'Done ✓';
+      document.getElementById(`file-item-${i}`).classList.add('done');
+
+      // 용량 표시 업데이트
+      const info = document.getElementById(`file-item-${i}`).querySelector('.file-meta');
+      const pct = ((1 - blob.size / files[i].size) * 100).toFixed(0);
+      const sizeClass = blob.size > mode.maxMB * 1024 * 1024 ? 'size-large' : 'size-reduced';
+      info.insertAdjacentHTML('afterend', `<div class="size-change ${sizeClass}">${formatSize(files[i].size)} → ${formatSize(blob.size)} (${pct > 0 ? '-' : '+'}${Math.abs(pct)}%) ${blob.size > mode.maxMB * 1024 * 1024 ? '⚠️ Over limit' : '✓'}</div>`);
+    } catch(e) {
+      results.push(null);
+      statusEl.className = 'file-status status-error';
+      statusEl.textContent = 'Error';
+    }
+  }
+
+  const done = results.filter(r => r !== null).length;
+  document.getElementById('dlStats').textContent = `${done} of ${files.length} converted`;
+  document.getElementById('downloadSection').classList.add('visible');
+  btn.textContent = '✨ Convert Again';
+  btn.disabled = false;
+});
+
+async function convertImage(file, fmt, quality, mode) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+
+      let w = img.naturalWidth, h = img.naturalHeight;
+
+      // Thumbnail 모드: 정방형 크롭
+      if (mode.square) {
+        const side = Math.min(w, h);
+        const offX = (w - side) / 2, offY = (h - side) / 2;
+        const targetPx = Math.max(740, Math.min(side, 2000));
+        canvas.width = targetPx; canvas.height = targetPx;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, offX, offY, side, side, 0, 0, targetPx, targetPx);
+      } else {
+        // 크기 조정
+        const maxSide = Math.max(w, h);
+        if (maxSide > mode.maxPx) {
+          const scale = mode.maxPx / maxSide;
+          w = Math.round(w * scale); h = Math.round(h * scale);
+        }
+        // minPx 이하면 그대로 유지 (강제 확대 금지)
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (fmt === 'png') {
+          ctx.clearRect(0, 0, w, h);
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+      }
+
+      const mimeType = fmt === 'png' ? 'image/png' : fmt === 'webp' ? 'image/webp' : 'image/jpeg';
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Conversion failed')), mimeType, quality);
+    };
+    img.onerror = () => reject(new Error('Load failed'));
+    img.src = url;
+  });
+}
+
+function getOutputName(original, fmt) {
+  const base = original.replace(/\.[^.]+$/, '');
+  const ext = fmt === 'png' ? 'png' : fmt === 'webp' ? 'webp' : 'jpg';
+  return `${base}_marpple.${ext}`;
+}
+
+// ZIP 다운로드
+document.getElementById('downloadAll').addEventListener('click', async () => {
+  const btn = document.getElementById('downloadAll');
+  btn.textContent = 'Compressing…';
+  btn.disabled = true;
+
+  const zip = new JSZip();
+  const folder = zip.folder('marpple_images');
+  results.forEach((r, i) => {
+    if (r) folder.file(r.name, r.blob);
+  });
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zipBlob);
+  a.download = `marpple_optimized_${Date.now()}.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  btn.textContent = '📦 Download All (ZIP)';
+  btn.disabled = false;
+});
+
+// Clear All
+document.getElementById('clearAll').addEventListener('click', () => {
+  files = []; results = [];
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('convertBtn').disabled = true;
+  document.getElementById('downloadSection').classList.remove('visible');
+  document.getElementById('specWarn').classList.remove('show');
+});
+</script>
+</body>
+</html>
